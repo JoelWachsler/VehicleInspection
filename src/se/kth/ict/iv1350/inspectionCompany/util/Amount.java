@@ -1,7 +1,7 @@
 package se.kth.ict.iv1350.inspectionCompany.util;
 
 /**
- * Datatype Amount for easier change in the future.
+ * Data type Amount for easier change in the future.
  */
 public class Amount {
     private int amount;

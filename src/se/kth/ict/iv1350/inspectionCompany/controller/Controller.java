@@ -1,5 +1,6 @@
 package se.kth.ict.iv1350.inspectionCompany.controller;
 
+import se.kth.ict.iv1350.inspectionCompany.DTO.InspectionDTO;
 import se.kth.ict.iv1350.inspectionCompany.integration.InspectionCatalog;
 import se.kth.ict.iv1350.inspectionCompany.model.Vehicle;
 import se.kth.ict.iv1350.inspectionCompany.util.Amount;
@@ -11,9 +12,10 @@ import se.kth.iv1350.payauth.PaymentAuthorization;
  * Handles communication with the different layers.
  */
 public class Controller {
-    private Garage garage;
-    private InspectionCatalog inspectionCatalog;
-    private PaymentAuthorization paymentAuthorization;
+    private final Garage garage;
+    private final InspectionCatalog inspectionCatalog;
+    private final PaymentAuthorization paymentAuthorization;
+    private Vehicle vehicle;
 
     public Controller(Garage garage, InspectionCatalog inspectionCatalog, PaymentAuthorization paymentAuthorization) {
         this.garage = garage;
@@ -40,7 +42,8 @@ public class Controller {
      * @param licenseNumber The license number of the vehicle sought after.
      */
     public Vehicle searchVehicleInspection(String licenseNumber) {
-        return inspectionCatalog.vehicleSearch(licenseNumber);
+        this.vehicle = inspectionCatalog.vehicleSearch(licenseNumber);
+        return this.vehicle;
     }
 
     /**
@@ -61,5 +64,26 @@ public class Controller {
     public boolean paymentRequest(CreditCard card, Amount cost) {
         // Convert amount to an integer value
         return paymentAuthorization.authorizePayment(card, cost.getAmount());
+    }
+
+    /**
+     * Get the first inspection from the vehicle object.
+     * @return The first inspection to be done.
+     */
+    public InspectionDTO getFirstInspection() {
+        return this.vehicle.getFirstInspection();
+    }
+
+    /**
+     * Update the inspection result
+     * @param updatedInspection The updated inspection result
+     * @return The next inspection
+     */
+    public InspectionDTO updateInspectionResult(InspectionDTO updatedInspection) {
+        InspectionDTO nextInspection = this.vehicle.addToInspectionsCarriedOut(updatedInspection);
+        if (nextInspection == null)
+            this.inspectionCatalog.storeInspectionResult(this.vehicle);
+
+        return nextInspection;
     }
 }

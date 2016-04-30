@@ -1,5 +1,6 @@
 package se.kth.ict.iv1350.inspectionCompany.view;
 
+import se.kth.ict.iv1350.inspectionCompany.DTO.InspectionDTO;
 import se.kth.ict.iv1350.inspectionCompany.controller.Controller;
 import se.kth.ict.iv1350.inspectionCompany.model.Vehicle;
 import se.kth.iv1350.payauth.CreditCard;
@@ -12,9 +13,10 @@ import java.util.Scanner;
  * Handles direct contact with the user.
  */
 public class View {
-    private Controller controller;
-    private Scanner scanner;
+    private final Controller controller;
+    private final Scanner scanner;
     private Vehicle vehicle;
+    private InspectionDTO currentInspection;
     // Credit Card variables
     private int pin;
     private String cardNumber;
@@ -36,6 +38,7 @@ public class View {
         PAYMENT_FAILED,
         INSPECTION_INIT,
         INSPECTION,
+        INSPECTION_COMPLETE,
         EXIT
     }
 
@@ -107,6 +110,16 @@ public class View {
 
             case INSPECTION_INIT:
                 System.out.println("Inspection has started!");
+                break;
+
+            case INSPECTION:
+                System.out.printf("\nInspect: %s\n", currentInspection.getInspect());
+                System.out.println("Enter \"pass\" or \"fail\":");
+                break;
+
+            case INSPECTION_COMPLETE:
+                System.out.println("The inspection is finished and the results have been printed out!");
+                System.out.println("[1] - Start a new inspection");
                 break;
 
             case EXIT:
@@ -209,10 +222,9 @@ public class View {
                 break;
 
             case PAYMENT_CVC:
-                int cvc = integerInstruction;
-
                 // Put all data in the holder
-                CreditCard card = new CreditCard(this.pin, this.cardNumber, this.holder, this.expiryDate, cvc);
+                // integerInstruction = cvc
+                CreditCard card = new CreditCard(this.pin, this.cardNumber, this.holder, this.expiryDate, integerInstruction);
 
                 // Check if payment passed
                 if (controller.paymentRequest(card, vehicle.calculateTotalCost()))
@@ -229,7 +241,27 @@ public class View {
                 this.currentState = State.PAYMENT_INIT;
                 break;
 
+            case INSPECTION_INIT:
+                // Get the initial inspection
+                this.currentInspection = controller.getFirstInspection();
+                this.currentState = State.INSPECTION;
+                break;
+
             case INSPECTION:
+                // If the inspection passed, update the inspection result and send it to the server
+                if (userInput.equals("pass") || userInput.equals("fail")) {
+                    if (userInput.equals("pass"))
+                        currentInspection = new InspectionDTO(currentInspection.getInspect(), true, currentInspection.getCost());
+                    currentInspection = controller.updateInspectionResult(currentInspection);
+                }
+
+                if (currentInspection == null)
+                    this.currentState = State.INSPECTION_COMPLETE;
+
+                break;
+
+            case INSPECTION_COMPLETE:
+                this.currentState = State.INIT;
                 break;
         }
     }
